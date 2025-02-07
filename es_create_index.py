@@ -4,7 +4,6 @@ from transformers import AutoTokenizer, AutoModel
 import torch
 import re
 
-
 # Function to escape non-text characters
 def escape_nontext_characters(text):
     # Define a dictionary of characters to escape
