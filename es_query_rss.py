@@ -10,6 +10,7 @@ from transformers import AutoTokenizer, AutoModel
 import argparse
 import sys
 import feedparser
+from environment import ES_HOST, ES_PORT, SEARCH_RESULTS_SIZE, SEARCH_SCORE_MIN  # Import environment variables
 
 # Load the tokenizer and model for generating vector representations
 tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
@@ -163,7 +164,6 @@ if __name__ == "__main__":
     # Load the JSON file
     with open(json_file_path, 'r') as file:
        rssdata = json.load(file)
-
     
 
     # Infinite loop to keep prompting the user for queries
@@ -173,11 +173,11 @@ if __name__ == "__main__":
         # Show thinking for a reasoning model
         show_thinking = Prompt.ask("Show thinking", choices=["yes", "no"], default="no")
         # Show thinking for a reasoning model
-        show_results = Prompt.ask("Show the search results (5)", choices=["yes", "no"], default="no")
+        show_results = Prompt.ask(f"Show the search results ({SEARCH_RESULTS_SIZE})", choices=["yes", "no"], default="no")
         # Prompt the user to choose between grounded data and generic data
         data_type = Prompt.ask("Choose data type", choices=["bbc", "general"], default="bbc")
         # Prompt the user for a query
-        QUERY = Prompt.ask("Enter your query (or type 'quit' to exit)",default="What is RAP and how can I apply for it?")
+        QUERY = Prompt.ask("Enter your query (or type 'quit' to exit)",default="How powerful is the USA president?")
 
         # Check if the user wants to quit
         if QUERY.lower() == 'quit':
@@ -201,13 +201,21 @@ if __name__ == "__main__":
                     print("No results found")
                 else:
                     search_results = ""
+                    i = 0
                     for result in results:
-                        answer = get_entry_by_value(rssdata, 'title', result['_source']['title'])
-                        if answer:
-                            answers.append(answer) 
-                            search_results= search_results + f"Q: {result['_source']['title']}\nA: {answer}\n"                       
+                        if i < SEARCH_RESULTS_SIZE:
+                            if result['_score'] >= SEARCH_SCORE_MIN:
+                                answer = get_entry_by_value(rssdata, 'title', result['_source']['title'])
+                                if answer:
+                                    answers.append(answer) 
+                                    search_results= search_results + f"Q [{result['_score']}]: {result['_source']['title']}\nA: {answer}\n"   
+                            i = i + 1
                     if show_results == "yes":
-                        console.print(Panel(search_results, title="Search Results", border_style="red"))
+                        if search_results == "":
+                            console.print("No results found")
+                            continue
+                        else:
+                            console.print(Panel(search_results, title="Search Results", border_style="red"))
                 
                 results_str = " ".join(answer['description'] for answer in answers if 'description' in answer)
                 prompt = f"Summarize after enriching with your own knowledge the text:{results_str}" 
