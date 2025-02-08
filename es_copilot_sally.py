@@ -7,7 +7,9 @@ from rich.prompt import Prompt
 from rich.panel import Panel
 import torch
 from transformers import AutoTokenizer, AutoModel
+from environment import ES_HOST, ES_PORT, SEARCH_RESULTS_SIZE, COSSIM_SEARCH_SCORE_MIN, BM25_SEARCH_SCORE_MIN  # Import environment variables
 
+# Function to perform semantic search
 # Function to perform semantic search
 def semantic_search_cossim(query_embedding, top_k=5):
     script_query = {
@@ -71,7 +73,7 @@ if __name__ == "__main__":
     model = AutoModel.from_pretrained("bert-base-uncased").to(device)
 
     # Path to the JSON file
-    json_file_path = 'data/qadata.json'
+    json_file_path = 'data/sl_qanda.json'
 
     # Load the JSON file
     with open(json_file_path, 'r') as file:
@@ -100,7 +102,7 @@ if __name__ == "__main__":
         # Show thinking for a reasoning model
         show_thinking = Prompt.ask("Show thinking", choices=["yes", "no"], default="no")
         # Show thinking for a reasoning model
-        show_results = Prompt.ask("Show the search results (5)", choices=["yes", "no"], default="no")
+        show_results = Prompt.ask(f"Show the search results (max {SEARCH_RESULTS_SIZE})", choices=["yes", "no"], default="no")
         # Prompt the user to choose between grounded data and generic data
         data_type = Prompt.ask("Choose data type", choices=["student loans", "general"], default="student loans")
         # Prompt the user for a query
@@ -129,7 +131,7 @@ if __name__ == "__main__":
                 else:
                     search_results = ""
                     for result in results:
-                        if result['_score'] > 1.60:
+                        if result['_score'] > COSSIM_SEARCH_SCORE_MIN:
                             answer = get_entry_by_value(qadata, 'title', result['_source']['title'])
                             if answer:
                                 answers.append(answer) 
@@ -159,7 +161,7 @@ if __name__ == "__main__":
                 else:
                     search_results = ""
                     for result in results:
-                        if result['_score'] > 7.5:
+                        if result['_score'] > BM25_SEARCH_SCORE_MIN:
                             answer = get_entry_by_value(qadata, 'title', result['_source']['title'])
                             if answer:
                                 answers.append(answer) 
