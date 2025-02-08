@@ -185,7 +185,7 @@ if __name__ == "__main__":
         # Show thinking for a reasoning model
         show_thinking = Prompt.ask("Show thinking", choices=["yes", "no"], default="no")
         # Show thinking for a reasoning model
-        show_results = Prompt.ask(f"Show the search results ({SEARCH_RESULTS_SIZE})", choices=["yes", "no"], default="no")
+        show_results = Prompt.ask(f"Show the search results (max {SEARCH_RESULTS_SIZE})", choices=["yes", "no"], default="no")
         # Prompt the user to choose between grounded data and generic data
         data_type = Prompt.ask("Choose data type", choices=["bbc", "general"], default="bbc")
         # Prompt the user for a query
