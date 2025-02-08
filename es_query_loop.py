@@ -9,7 +9,6 @@ import torch
 from transformers import AutoTokenizer, AutoModel
 
 # Function to perform semantic search
-# Function to perform semantic search
 def semantic_search_cossim(query_embedding, top_k=5):
     script_query = {
         "script_score": {
