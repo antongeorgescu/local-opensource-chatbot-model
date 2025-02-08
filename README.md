@@ -1,4 +1,4 @@
-# Local AI Copilot
+# Local AI Copilot with free open-source software
 
 ## Project Overview
 
