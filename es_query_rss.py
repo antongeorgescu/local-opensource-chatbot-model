@@ -18,7 +18,7 @@ model = AutoModel.from_pretrained("bert-base-uncased")
 
 # Function to perform semantic search
 # Function to perform semantic search
-def semantic_search(query_embedding, top_k=5):
+def semantic_search_cossim(query_embedding, top_k=5):
     script_query = {
         "script_score": {
             "query": {"match_all": {}},
@@ -208,7 +208,7 @@ if __name__ == "__main__":
                 answers = []
 
                 # Perform semantic search
-                results = semantic_search(query_embedding, SEARCH_RESULTS_SIZE)
+                results = semantic_search_cossim(query_embedding, SEARCH_RESULTS_SIZE)
                 if len(results) == 0:
                     print("No results found")
                 else:

@@ -10,7 +10,7 @@ from transformers import AutoTokenizer, AutoModel
 
 # Function to perform semantic search
 # Function to perform semantic search
-def semantic_search(query_embedding, top_k=5):
+def semantic_search_cossim(query_embedding, top_k=5):
     script_query = {
         "script_score": {
             "query": {"match_all": {}},
@@ -27,6 +27,18 @@ def semantic_search(query_embedding, top_k=5):
             "query": script_query
         }
     )
+    return response['hits']['hits']
+
+def semantic_search_bm25(query, top_k=5):
+    query_body = {
+        "size": top_k,
+        "query": {
+            "match": {
+                "title": query
+            }
+        }
+    }
+    response = es.search(index=index_name, body=query_body)
     return response['hits']['hits']
 
 def generate_vector(text):
@@ -111,22 +123,23 @@ if __name__ == "__main__":
 
                 answers = []
 
-                # Perform semantic search
-                results = semantic_search(query_embedding)
+                # Perform semantic search with cosine similarity
+                results = semantic_search_cossim(query_embedding)
                 if len(results) == 0:
                     print("No results found")
                 else:
                     search_results = ""
                     for result in results:
-                        answer = get_entry_by_value(qadata, 'title', result['_source']['title'])
-                        if answer:
-                            answers.append(answer) 
-                            search_results= search_results + f"Q: {result['_source']['title']}\nA: {answer}\n"                       
+                        if result['_score'] > 1.60:
+                            answer = get_entry_by_value(qadata, 'title', result['_source']['title'])
+                            if answer:
+                                answers.append(answer) 
+                                search_results= search_results + f"Q [{result['_score']}]: {result['_source']['title']}\nA: {answer}\n"                       
                     if show_results == "yes":
-                        console.print(Panel(search_results, title="Search Results", border_style="red"))
+                        console.print(Panel(search_results, title="Search Results [cossim]", border_style="red"))
                 
                 results_str = " ".join(answer['content'] for answer in answers if 'content' in answer)
-                prompt = "Summarize in not more than 15 phrases the following text:" + results_str
+                prompt = f"Summarize the following text in a good journalistic style, that makes sense, is concise and focused on the topic, and do not enrich the response:{results_str}"  
 
                 # Generate a response using the DeepSeek selected model
                 response = ollama.generate(model=model_name, prompt=prompt)
@@ -138,7 +151,37 @@ if __name__ == "__main__":
                     display_response = response['response']
 
                 # Print the response
-                console.print(Panel(display_response, title="Response", border_style="blue"))
+                console.print(Panel(display_response, title="Response [cossim]", border_style="red"))
+
+                # Perform semantic search with BM25
+                results = semantic_search_bm25(QUERY)
+                if len(results) == 0:
+                    print("No results found")
+                else:
+                    search_results = ""
+                    for result in results:
+                        if result['_score'] > 7.5:
+                            answer = get_entry_by_value(qadata, 'title', result['_source']['title'])
+                            if answer:
+                                answers.append(answer) 
+                                search_results= search_results + f"Q [{result['_score']}]: {result['_source']['title']}\nA: {answer}\n"                       
+                    if show_results == "yes":
+                        console.print(Panel(search_results, title="Search Results [BM25]", border_style="blue"))
+                
+                results_str = " ".join(answer['content'] for answer in answers if 'content' in answer)
+                prompt = f"Summarize the following text in a good journalistic style, that makes sense, is concise and focused on the topic, and do not enrich the response:{results_str}"  
+
+                # Generate a response using the DeepSeek selected model
+                response = ollama.generate(model=model_name, prompt=prompt)
+                
+                if show_thinking == "no":
+                    # Remove the string between <think> and </think> in the response
+                    display_response = re.sub(r'<think>.*?</think>', '', response['response'], flags=re.DOTALL)
+                else:
+                    display_response = response['response']
+
+                # Print the response
+                console.print(Panel(display_response, title="Response [BM25]", border_style="blue"))
 
             except TransportError as e:
                 console.print(f"*** TransportError: {e}", style="bold red")
