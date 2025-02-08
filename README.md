@@ -2,7 +2,13 @@
 
 ## Project Overview
 
-This project provides a set of Python scripts for creating and querying an Elasticsearch index using BERT embeddings for semantic search. The main scripts are [`es_create_index.py`](es_create_index.py) and [`es_query_loop.py`](es_query_loop.py). The script [`es_query_bbc`](es_query_bbc.py) shows an application of the same approach to a free RRS feed, coming from BBC News.
+This project provides a couple of AI Copilots (<b>Dave</b>, <b>Sally</b>) built on a set of Python scripts for creating and querying an Elasticsearch index using BERT embeddings for semantic search. The main scripts for their respectyive copilots are:
+* <b> Copilot Sally</b>, assisting with Q&A related to <i>programs of study loans</i>: 
+   [`es_create_index_sally.py`](es_create_index_sally.py)
+   [`es_copilot_sally.py`](es_copilot_sally.py)
+* <b> Copilot Dave</b>, assisting with news collected from <i>BBC News RSS feed</i>:    
+   [`es_create_index_dave.py`](es_create_index_dave.py)
+   [`es_copilot_dave.py`](es_copilot_dave.py)
 
 ## Requirements
 
@@ -37,10 +43,11 @@ This script is responsible for creating an Elasticsearch index and indexing docu
 To create the index and index documents, run:
 
 ``` sh
-python es_create_index.py
+python es_create_index_sally.py
+python es_create_index_dave.py
 ```
 
-### es\_query\_loop.py, es\_query\_bbc.py
+### es\_copilot\_sally.py, es\_copilot\_dave.py
 
 These two script provide an interactive loop for querying the Elasticsearch index using semantic search.
 
@@ -62,13 +69,13 @@ These two script provide an interactive loop for querying the Elasticsearch inde
 To start the interactive query loop, run:
 
 ``` sh
-python es_query_loop.py
-python es_query_bbc.py
+python es_copilot_sally.py
+python es_copilot_dave.py
 ```
 
 ## Functional diagram
 
-Below is the functional diagram of the script es\_query\_bbc.py
+Below is the functional diagram that covers the <i>unified logical functionality</i> of the scripts es\_create\_index\_dave.py and  es\_copilot\_dave.py
 
 ``` mermaid
 graph TD
@@ -88,14 +95,15 @@ graph TD
 
 1. **Create the Index and Index Documents**:
    ```sh
-   python es_create_index.py
+   python es_create_index_sally.py
+   python es_create_index_dave.py
    ```
 
 2. **Query the Index**:
 
    ``` sh
-   python es_query_loop.py
-   python es_query_bbc.py
+   python es_copilot_sally.py
+   python es_copilot_dave.py
    ```
 
 ## Configuration

@@ -73,7 +73,7 @@ if __name__ == "__main__":
     model = AutoModel.from_pretrained("bert-base-uncased").to(device)
 
     # Path to the JSON file
-    json_file_path = 'data/sl_qanda.json'
+    json_file_path = 'data/qadata.json'
 
     # Load the JSON file
     with open(json_file_path, 'r') as file:
