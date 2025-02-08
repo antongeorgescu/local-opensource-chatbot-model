@@ -10,7 +10,8 @@ from transformers import AutoTokenizer, AutoModel
 import argparse
 import sys
 import feedparser
-from environment import ES_HOST, ES_PORT, SEARCH_RESULTS_SIZE, COSSIM_SEARCH_SCORE_MIN, BM25_SEARCH_SCORE_MIN  # Import environment variables
+import numpy as np
+from environment import SEARCH_RESULTS_SIZE, SEARCH_RESULT_ACCURACY  # Import environment variables
 
 # Load the tokenizer and model for generating vector representations
 tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
@@ -70,13 +71,23 @@ def index_documents(documents, index_name):
             "_index": index_name,
             "_source": {
                 "title": doc['title'],
-                "embedding": doc['embedding']
+                "embedding": doc['embedding'],
+                "description": doc['description'],
+                "articlelink": doc['articlelink']
             }
         }
         for doc in documents
     ]
     helpers.bulk(es, actions)
     print("Documents indexed successfully")
+
+def check_qa_similarity(question, answer):
+    question_emdedding = generate_vector(question)
+    answer_embedding = generate_vector(answer)
+    dot_product = np.dot(question_emdedding, answer_embedding)
+    norm_embedding1 = np.linalg.norm(question_emdedding)
+    norm_embedding2 = np.linalg.norm(answer_embedding)
+    return dot_product / (norm_embedding1 * norm_embedding2)
 
 # Example usage
 if __name__ == "__main__":
@@ -126,7 +137,7 @@ if __name__ == "__main__":
             documents = []
             for item in feeditems:
                 documents.append(
-                    {"title": item["title"], "embedding": generate_vector(item["title"])},
+                    {"title": item["title"], "embedding": generate_vector(item["title"]),"description": item["description"],"articlelink": item["link"]},
                 )
 
             # Create an index
@@ -134,22 +145,43 @@ if __name__ == "__main__":
             if es.indices.exists(index=index_name):
                 es.indices.delete(index=index_name)
                 
-            # Create the index
-            mappings = {
+            # Define the index settings and mappings
+            index_settings = {
+                "settings": {
+                    "index": {
+                        "number_of_shards": 1,
+                        "number_of_replicas": 1,
+                        "similarity": {
+                            "default": {
+                                "type": "BM25",
+                                "k1": 1.2,
+                                "b": 0.75
+                            }
+                        }
+                    }
+                },
                 "mappings": {
                     "properties": {
-                        "content": {
+                        "title": {
                             "type": "text"
                         },
                         "embedding": {
                             "type": "dense_vector",
                             "dims": 768  # Adjust dimensions based on your model
-                        }
+                        },
+                        "description": {
+                            "type": "text",
+                            "index": False
+                        },
+                        "articlelink": {
+                            "type": "text",
+                            "index": False
+                        },
                     }
                 }
             }
             
-            es.indices.create(index=index_name, body=mappings)
+            es.indices.create(index=index_name, body=index_settings)
             print(f"Index '{index_name}' created successfully")
             
             # Index documents
@@ -180,16 +212,18 @@ if __name__ == "__main__":
 
     # Infinite loop to keep prompting the user for queries
     while True:
+        SHOW_NEXT_PANEL = True
+
         # Prompt the user to choose between grounded data and generic data
         model_name = Prompt.ask("Choose AI model", choices=["deepseek-r1:1.5b", "deepseek-r1:7b", "deepseek-v2"], default="deepseek-r1:1.5b")
         # Show thinking for a reasoning model
         show_thinking = Prompt.ask("Show thinking", choices=["yes", "no"], default="no")
         # Show thinking for a reasoning model
-        show_results = Prompt.ask(f"Show the search results (max {SEARCH_RESULTS_SIZE})", choices=["yes", "no"], default="no")
+        show_results = Prompt.ask(f"Show the search results (max {SEARCH_RESULTS_SIZE})", choices=["yes", "no"], default="yes")
         # Prompt the user to choose between grounded data and generic data
         data_type = Prompt.ask("Choose data type", choices=["bbc", "general"], default="bbc")
         # Prompt the user for a query
-        QUERY = Prompt.ask("Enter your query (or type 'quit' to exit)",default="How powerful is the USA president?")
+        QUERY = Prompt.ask("Enter your query (or type 'quit' to exit)",default="Hamas hostages crisis updates")
 
         # Check if the user wants to quit
         if QUERY.lower() == 'quit':
@@ -206,45 +240,57 @@ if __name__ == "__main__":
                 query_embedding = generate_vector(QUERY)
 
                 answers = []
+                links = []
 
                 # Perform semantic search
+                SHOW_GENAI_RESPONSE = False
                 results = semantic_search_cossim(query_embedding, SEARCH_RESULTS_SIZE)
                 if len(results) == 0:
-                    print("No results found")
+                    print("No search results found")
                 else:
                     search_results = ""
                     i = 0
                     for result in results:
                         if i < SEARCH_RESULTS_SIZE:
-                            if result['_score'] >= COSSIM_SEARCH_SCORE_MIN:
-                                answer = get_entry_by_value(rssdata, 'title', result['_source']['title'])
+                            similarity = check_qa_similarity(QUERY, result['_source']['title'])
+                            if similarity > SEARCH_RESULT_ACCURACY:
+                                answer = result['_source']['description']
                                 if answer:
                                     answers.append(answer) 
+                                    links.append(result['_source']['articlelink'])
                                     search_results= search_results + f"Q [{result['_score']}]: {result['_source']['title']}\nA: {answer}\n"   
                             i = i + 1
                     if show_results == "yes":
                         if search_results == "":
-                            console.print("No results found")
-                            continue
+                            console.print(Panel("No search results found...", title="Search Results [CosSim]", border_style="red"))
                         else:
                             console.print(Panel(search_results, title="Search Results [CosSim]", border_style="red"))
-                
-                results_str = " ".join(answer['description'] for answer in answers if 'description' in answer)
-                prompt = f"Summarize the following text in a good journalistic style, that makes sense, is concise and focused on the topic:{results_str}"  
+                            SHOW_GENAI_RESPONSE = True
 
-                # Generate a response using the DeepSeek selected model
-                response = ollama.generate(model=model_name, prompt=prompt)
-                
-                if show_thinking == "no":
-                    # Remove the string between <think> and </think> in the response
-                    display_response = re.sub(r'<think>.*?</think>', '', response['response'], flags=re.DOTALL)
-                else:
-                    display_response = response['response']
+                if SHOW_GENAI_RESPONSE:
+                    # results_str = " ".join(answer['description'] for answer in answers if 'description' in answer)
+                    results_str = " ".join(answer for answer in answers)
+                    prompt = f"Summarize the following text in a good journalistic style, that makes sense, is concise and focused on the topic:{results_str}."
+                    prompt = prompt + f"Show message to find out more details by clicking on the links listed at {', '.join(links)}. Format these links as URLs."
 
-                # Print the response
-                console.print(Panel(display_response, title="Response [CosSim]", border_style="red"))
+                    # Generate a response using the DeepSeek selected model
+                    response = ollama.generate(model=model_name, prompt=prompt)
+                    
+                    if show_thinking == "no":
+                        # Remove the string between <think> and </think> in the response
+                        display_response = re.sub(r'<think>.*?</think>', '', response['response'], flags=re.DOTALL)
+                    else:
+                        display_response = response['response']
+
+                    # Print the response
+                    console.print(Panel(display_response, title="Response [CosSim]", border_style="red"))
 
                 # Perform semantic search with BM25
+                SHOW_GENAI_RESPONSE = False
+
+                answers = []
+                links = []
+
                 results = semantic_search_bm25(QUERY, SEARCH_RESULTS_SIZE)
                 if len(results) == 0:
                     print("No results found")
@@ -253,33 +299,37 @@ if __name__ == "__main__":
                     i = 0
                     for result in results:
                         if i < SEARCH_RESULTS_SIZE:
-                            if result['_score'] >= BM25_SEARCH_SCORE_MIN:
-                                answer = get_entry_by_value(rssdata, 'title', result['_source']['title'])
+                            similarity = check_qa_similarity(QUERY, result['_source']['title'])
+                            if similarity > SEARCH_RESULT_ACCURACY:
+                                answer = result['_source']['description']
                                 if answer:
                                     answers.append(answer) 
+                                    links.append(result['_source']['articlelink'])
                                     search_results= search_results + f"Q [{result['_score']}]: {result['_source']['title']}\nA: {answer}\n"   
                             i = i + 1
                     if show_results == "yes":
                         if search_results == "":
-                            console.print("No results found")
-                            continue
+                            console.print(Panel("No search results found...", title="Search Results [BM25]", border_style="blue"))
                         else:
                             console.print(Panel(search_results, title="Search Results [BM25]", border_style="blue"))
+                            SHOW_GENAI_RESPONSE = True
 
-                results_str = " ".join(answer['description'] for answer in answers if 'description' in answer)
-                prompt = f"Summarize the following text in a good journalistic style, that makes sense, is concise and focused on the topic:{results_str}" 
+                if SHOW_GENAI_RESPONSE:
+                    results_str = " ".join(answer for answer in answers)
+                    prompt = f"Summarize the following text in a good journalistic style, that makes sense, is concise and focused on the topic:{results_str}."
+                    prompt = prompt + f"Show message to find out more details by clicking on the links listed at {', '.join(links)}. Format these links as URLs."
 
-                # Generate a response using the DeepSeek selected model
-                response = ollama.generate(model=model_name, prompt=prompt)
-                
-                if show_thinking == "no":
-                    # Remove the string between <think> and </think> in the response
-                    display_response = re.sub(r'<think>.*?</think>', '', response['response'], flags=re.DOTALL)
-                else:
-                    display_response = response['response']
+                    # Generate a response using the DeepSeek selected model
+                    response = ollama.generate(model=model_name, prompt=prompt)
+                    
+                    if show_thinking == "no":
+                        # Remove the string between <think> and </think> in the response
+                        display_response = re.sub(r'<think>.*?</think>', '', response['response'], flags=re.DOTALL)
+                    else:
+                        display_response = response['response']
 
-                # Print the response
-                console.print(Panel(display_response, title="Response [BM25]", border_style="blue"))
+                    # Print the response
+                    console.print(Panel(display_response, title="Response [BM25]", border_style="blue"))
 
             except TransportError as e:
                 console.print(f"*** TransportError: {e}", style="bold red")
