@@ -20,9 +20,9 @@ pip install -r requirements.txt
 
 ## Scripts
 
-### es\_create\_index.py
+### es\_create\_index\_sally.py, es\_create\_index\_dave.py
 
-This script is responsible for creating an Elasticsearch index and indexing documents with BERT embeddings.
+Each script is responsible for creating an Elasticsearch index and indexing documents with BERT embeddings.
 
 #### Key Functions
 
