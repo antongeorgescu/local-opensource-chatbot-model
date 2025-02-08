@@ -9,6 +9,9 @@ This project provides a couple of AI Copilots (<b>Dave</b>, <b>Sally</b>) built 
 * <b> Copilot Dave</b>, assisting with news collected from <i>BBC News RSS feed</i>:    
    [`es_create_index_dave.py`](es_create_index_dave.py)
    [`es_copilot_dave.py`](es_copilot_dave.py)
+* <b> Copilot Phil</b>, assisting with Q&A related to <i>programs of study loans</i>:     
+   [`es_create_index_phil.py`](es_create_index_dave.py)
+   [`es_copilot_phil.py`](es_copilot_dave.py)
 
 ## Requirements
 
@@ -20,7 +23,7 @@ pip install -r requirements.txt
 
 ## Scripts
 
-### es\_create\_index\_sally.py, es\_create\_index\_dave.py
+### es\_create\_index\_sally.py, es\_create\_index\_dave.py, es\_copilot\_phil.py
 
 Each script is responsible for creating an Elasticsearch index and indexing documents with BERT embeddings.
 
@@ -45,9 +48,10 @@ To create the index and index documents, run:
 ``` sh
 python es_create_index_sally.py
 python es_create_index_dave.py
+python es_create_index_phil.py
 ```
 
-### es\_copilot\_sally.py, es\_copilot\_dave.py
+### es\_copilot\_sally.py, es\_copilot\_dave.py, es\_copilot\_phil.py
 
 These two script provide an interactive loop for querying the Elasticsearch index using semantic search.
 
@@ -71,6 +75,7 @@ To start the interactive query loop, run:
 ``` sh
 python es_copilot_sally.py
 python es_copilot_dave.py
+python es_copilot_phil.py
 ```
 
 ## Functional diagram
@@ -97,6 +102,7 @@ graph TD
    ```sh
    python es_create_index_sally.py
    python es_create_index_dave.py
+   python es_create_index_phil.py
    ```
 
 2. **Query the Index**:
@@ -104,6 +110,7 @@ graph TD
    ``` sh
    python es_copilot_sally.py
    python es_copilot_dave.py
+   python es_copilot_phil.py
    ```
 
 ## Configuration
