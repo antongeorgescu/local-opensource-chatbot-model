@@ -126,8 +126,8 @@ graph TD
 >> (b) Add or modify the configuration to enable GPU support. For example:
    >>> ```
    >>> gpu:
-   >>> enabled: true
-   >>> device: 0  # Specify the GPU device ID if you have multiple GPUs
+   >>>   enabled: true
+   >>>   device: 0  # Specify the GPU device ID if you have multiple GPUs
    >>> ```
 > 4. **Run Ollama with GPU**:
 >>> At the beginning of Python script set OLLAMA_GPU environment variable to enable GPU support:

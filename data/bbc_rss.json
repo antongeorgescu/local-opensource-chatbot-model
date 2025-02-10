@@ -1,5 +1,10 @@
 [
     {
+        "title": "Romanian President Klaus Iohannis resigns ahead of election re-run",
+        "description": "His exit comes as political opponents had sought to have him impeached over last year's cancelled vote.",
+        "link": "https://www.bbc.com/news/articles/c3w805xjg1xo"
+    },
+    {
         "title": "Macron shares his deepfakes for AI summit attention",
         "description": "The French president posted a montage of parodies featuring himself to promote an AI Summit in Paris.",
         "link": "https://www.bbc.com/news/articles/c3e1kne7q1qo"
@@ -20,14 +25,14 @@
         "link": "https://www.bbc.com/news/articles/czrljmzyz7xo"
     },
     {
-        "title": "Ecuador election ends in a 'tie' prompting run-off",
-        "description": "Daniel Noboa and his main challenger Luisa González received near identical percentages of the vote.",
-        "link": "https://www.bbc.com/news/articles/cn4mnznmwlvo"
-    },
-    {
         "title": "Trial to begin of man accused of stabbing Salman Rushdie",
         "description": "A 27-year-old man faces a jury trial in New York state, where Mr Rushdie is expected to testify.",
         "link": "https://www.bbc.com/news/articles/cp3w6dkwkq9o"
+    },
+    {
+        "title": "Ecuador election ends in a 'tie' prompting run-off",
+        "description": "Daniel Noboa and his main challenger Luisa González received near identical percentages of the vote.",
+        "link": "https://www.bbc.com/news/articles/cn4mnznmwlvo"
     },
     {
         "title": "Ed Sheeran stopped from busking in Bengaluru by Indian police",
@@ -63,11 +68,6 @@
         "title": "Bodies of migrants found in Libya mass grave, authorities say",
         "description": "It comes just days after another mass grave with 19 bodies was found on a farm nearby.",
         "link": "https://www.bbc.com/news/articles/c4gzyg27kg1o"
-    },
-    {
-        "title": "Germany's front-runner Merz: Risk-taker who flirted with far right",
-        "description": "A look at the conservative leader who broke a German taboo by accepting support from the AfD.",
-        "link": "https://www.bbc.com/news/articles/cdxnzkyw7n1o"
     },
     {
         "title": "Why more young men in Germany are turning to the far right",
