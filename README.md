@@ -118,6 +118,28 @@ graph TD
 * **Elasticsearch**: Ensure that Elasticsearch is running locally on `localhost:9200`.
 * **BERT Model**: The scripts use the `bert-base-uncased` model from Hugging Face's Transformers library.
 * **Environment**: A local `environment.py` file holds the environment configuration settings used across the *query* scripts.
+* **GPU enabled Ollama models**: To force Ollama to run on a GPU, you can follow the steps below.
+> 1. **Ensure CUDA is Installed**: Make sure you have the CUDA Toolkit installed and properly configured on your system. You can download it from the NVIDIA website.
+> 2. **Install Ollama**: If you haven't already, install the Ollama binary and the Python package as previously described.
+> 3. **Configure Ollama to Use GPU**: 
+>> (a) Open the Ollama configuration file, typically located in your user directory (e.g., ~/.ollama/config.yaml).
+>> (b) Add or modify the configuration to enable GPU support. For example:
+   >>> ```
+   >>> gpu:
+   >>> enabled: true
+   >>> device: 0  # Specify the GPU device ID if you have multiple GPUs
+   >>> ```
+> 4. **Run Ollama with GPU**:
+>>> At the beginning of Python script set OLLAMA_GPU environment variable to enable GPU support:
+   >>> ```
+   >>> import os
+   >>> os.environ['OLLAMA_GPU'] = '1'
+   >>> ```
+> 5. **Verify GPU Usage**: You can verify that Ollama is using the GPU by monitoring GPU usage with nvidia-smi:
+   >>> ```
+   >>> nvidia-smi
+   >>> ```
+>> Or goto to Task Manager / Performance tab and monitor the GPU utilization (device 0, for our particluar example above)  
 
 ## License
 
@@ -127,6 +149,7 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 * [Hugging Face Transformers](https://github.com/huggingface/transformers)
 * [Elasticsearch](https://www.elastic.co/elasticsearch/)
+* [Ollama](https://www.ollama.com)
 
 - - -
 

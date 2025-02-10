@@ -8,16 +8,23 @@ from rich.panel import Panel
 import torch
 from transformers import AutoTokenizer, AutoModel
 import argparse
-import sys
+import sys, os
 import feedparser
+import pickle
 import numpy as np
 from environment import SEARCH_RESULTS_SIZE, SEARCH_RESULT_ACCURACY  # Import environment variables
 
-# Load the tokenizer and model for generating vector representations
-tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-model = AutoModel.from_pretrained("bert-base-uncased")
+# import urllib.request
+# import ssl
 
-# Function to perform semantic search
+# url = "https://huggingface.co/bert-base-uncased/resolve/main/tokenizer_config.json"
+# context = ssl._create_unverified_context()
+# response = urllib.request.urlopen(url, context=context)
+# print(response.read())
+
+# Set OLLAMA_GPU environment variable to enable GPU support
+os.environ['OLLAMA_GPU'] = '1'
+
 # Function to perform semantic search
 def semantic_search_cossim(query_embedding, top_k=5):
     script_query = {
@@ -99,7 +106,7 @@ if __name__ == "__main__":
         sys.exit()
 
     # Define the index name
-    index_name = 'qa_data_index_2'
+    index_name = 'qa_data_index_phil'
 
     # Initialize the console
     console = Console()
@@ -109,8 +116,15 @@ if __name__ == "__main__":
     console.print(f"Using device: {device}", style="bold green")
 
     # Load the tokenizer and model for generating vector representations
-    tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-    model = AutoModel.from_pretrained("bert-base-uncased").to(device)
+    # tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+    # model = AutoModel.from_pretrained("bert-base-uncased").to(device)
+
+    # Load the tokenizer from the saved directory
+    with open('serialize_bert/tokenizer.pkl', 'rb') as f:
+        tokenizer = pickle.load(f)
+    # Load the model from the saved directory
+    with open('serialize_bert/model.pkl', 'rb') as f:
+        model = pickle.load(f)
 
     # Path to the JSON file
     json_file_path = 'data/qadata.json'

@@ -1,10 +1,16 @@
 import json
 from elasticsearch import Elasticsearch, helpers
-from transformers import AutoTokenizer, AutoModel
+# from transformers import AutoTokenizer, AutoModel
+import pickle
 import torch
 import re
-import feedparser
-from es_copilot_dave import generate_vector
+
+# Load the tokenizer from the saved directory
+with open('serialize_bert/tokenizer.pkl', 'rb') as f:
+    tokenizer = pickle.load(f)
+# Load the model from the saved directory
+with open('serialize_bert/model.pkl', 'rb') as f:
+    model = pickle.load(f)
 
 # Function to escape non-text characters
 def escape_nontext_characters(text):
@@ -37,12 +43,19 @@ def index_documents(documents, index_name):
     helpers.bulk(es, actions)
     print("Documents indexed successfully")
 
+def generate_vector(text):
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
+    inputs = {key: value for key, value in inputs.items()}
+    with torch.no_grad():
+        outputs = model(**inputs)
+    return outputs.last_hidden_state.mean(dim=1).cpu().numpy().tolist()[0]
+
 if __name__ == "__main__":
     # Initialize Elasticsearch client
     es = Elasticsearch([{'host': 'localhost', 'port': 9200, 'scheme': 'http'}])
 
     # Define the index name
-    index_name = 'qa_data_index_2'
+    index_name = 'qa_data_index_phil'
 
     # File path to save the JSON array
     file_path = 'data/qadata.json'
