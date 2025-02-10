@@ -9,7 +9,6 @@ import torch
 from transformers import AutoTokenizer, AutoModel
 import argparse
 import sys, os
-import feedparser
 import pickle
 import numpy as np
 from environment import SEARCH_RESULTS_SIZE, SEARCH_RESULT_ACCURACY  # Import environment variables
