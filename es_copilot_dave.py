@@ -1,21 +1,19 @@
 from elasticsearch import Elasticsearch, ConnectionError, TransportError, helpers
 import ollama
-import json
+import json, os
 import re
 from rich.console import Console
 from rich.prompt import Prompt
 from rich.panel import Panel
 import torch
-from transformers import AutoTokenizer, AutoModel
-import argparse
+# from transformers import AutoTokenizer, AutoModel
 import sys
-import feedparser
 import numpy as np
+import pickle
 from environment import SEARCH_RESULTS_SIZE, SEARCH_RESULT_ACCURACY  # Import environment variables
 
-# Load the tokenizer and model for generating vector representations
-tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-model = AutoModel.from_pretrained("bert-base-uncased")
+# Set OLLAMA_GPU environment variable to enable GPU support
+os.environ['OLLAMA_GPU'] = '1'
 
 # Function to perform semantic search
 # Function to perform semantic search
@@ -109,8 +107,15 @@ if __name__ == "__main__":
     console.print(f"Using device: {device}", style="bold green")
 
     # Load the tokenizer and model for generating vector representations
-    tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-    model = AutoModel.from_pretrained("bert-base-uncased").to(device)
+    # tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+    # model = AutoModel.from_pretrained("bert-base-uncased").to(device)
+
+     # Load the tokenizer from the saved directory
+    with open('serialize_bert/tokenizer.pkl', 'rb') as f:
+        tokenizer = pickle.load(f)
+    # Load the model from the saved directory
+    with open('serialize_bert/model.pkl', 'rb') as f:
+        model = pickle.load(f)
 
     # Path to the JSON file
     json_file_path = 'data/bbc_rss.json'

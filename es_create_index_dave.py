@@ -1,10 +1,23 @@
-import json
+import json, os
 from elasticsearch import Elasticsearch, helpers
-from transformers import AutoTokenizer, AutoModel
-import torch
-import re
+# from transformers import AutoTokenizer, AutoModel
 import feedparser
-from es_copilot_dave import generate_vector
+import pickle
+import torch
+
+# Load the tokenizer from the saved directory
+with open('serialize_bert/tokenizer.pkl', 'rb') as f:
+    tokenizer = pickle.load(f)
+# Load the model from the saved directory
+with open('serialize_bert/model.pkl', 'rb') as f:
+    model = pickle.load(f)
+
+def generate_vector(text):
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
+    inputs = {key: value for key, value in inputs.items()}
+    with torch.no_grad():
+        outputs = model(**inputs)
+    return outputs.last_hidden_state.mean(dim=1).cpu().numpy().tolist()[0]
 
 # Function to index documents with embeddings
 def index_documents(documents, index_name):
@@ -29,6 +42,15 @@ if __name__ == "__main__":
 
     # Define the index name
     index_name = 'bbc_rss_index'
+
+    # Remove the write block from the index
+    if es.indices.exists(index=index_name):
+        es.indices.put_settings(
+            index=index_name,
+            body={
+                "index.blocks.read_only_allow_delete": None
+            }
+        )
 
     # Fetch RSS feed data
     rss_url = "https://feeds.bbci.co.uk/news/world/rss.xml"
