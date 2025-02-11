@@ -1,13 +1,17 @@
 from elasticsearch import Elasticsearch, ConnectionError, TransportError
 import ollama
-import json
+import json, os
 import re
 from rich.console import Console
 from rich.prompt import Prompt
 from rich.panel import Panel
 import torch
-from transformers import AutoTokenizer, AutoModel
+# from transformers import AutoTokenizer, AutoModel
 from environment import ES_HOST, ES_PORT, SEARCH_RESULTS_SIZE, COSSIM_SEARCH_SCORE_MIN, BM25_SEARCH_SCORE_MIN  # Import environment variables
+import pickle
+
+# Set OLLAMA_GPU environment variable to enable GPU support
+os.environ['OLLAMA_GPU'] = '1'
 
 # Function to perform semantic search
 # Function to perform semantic search
@@ -66,11 +70,18 @@ if __name__ == "__main__":
     console.print(f"Using device: {device}", style="bold green")
 
     # Define the index name
-    index_name = 'qa_data_index'
+    index_name = 'qa_data_index_sally'
 
     # Load the tokenizer and model for generating vector representations
-    tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-    model = AutoModel.from_pretrained("bert-base-uncased").to(device)
+    # tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+    # model = AutoModel.from_pretrained("bert-base-uncased").to(device)
+
+    # Load the tokenizer from the saved directory
+    with open('serialize_bert/tokenizer.pkl', 'rb') as f:
+        tokenizer = pickle.load(f)
+    # Load the model from the saved directory
+    with open('serialize_bert/model.pkl', 'rb') as f:
+        model = pickle.load(f)
 
     # Path to the JSON file
     json_file_path = 'data/qadata.json'

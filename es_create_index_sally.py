@@ -1,8 +1,9 @@
 import json
 from elasticsearch import Elasticsearch, helpers
-from transformers import AutoTokenizer, AutoModel
+# from transformers import AutoTokenizer, AutoModel
 import torch
 import re
+import pickle
 
 # Function to escape non-text characters
 def escape_nontext_characters(text):
@@ -102,14 +103,21 @@ if __name__ == "__main__":
     es = Elasticsearch([{'host': 'localhost', 'port': 9200, 'scheme': 'http'}])
 
     # Define the index name
-    index_name = 'qa_data_index'
+    index_name = 'qa_data_index_sally'
 
     # Check if GPU is available and set the device accordingly
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Load the tokenizer and model for generating vector representations
-    tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-    model = AutoModel.from_pretrained("bert-base-uncased").to(device)
+    # tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+    # model = AutoModel.from_pretrained("bert-base-uncased").to(device)
+
+    # Load the tokenizer from the saved directory
+    with open('serialize_bert/tokenizer.pkl', 'rb') as f:
+        tokenizer = pickle.load(f)
+    # Load the model from the saved directory
+    with open('serialize_bert/model.pkl', 'rb') as f:
+        model = pickle.load(f)
 
     if es.indices.exists(index=index_name):
         print(f"Index '{index_name}' already exists. Will be re-used.")
